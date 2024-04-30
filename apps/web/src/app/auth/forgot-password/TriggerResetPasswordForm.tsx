@@ -18,7 +18,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function TriggerResetPasswordForm() {
-  const [emailSent, setEmailSent] = useState(true);
+  const [emailSent, setEmailSent] = useState(false);
 
   const triggerPasswordReset = api.auth.triggerPasswordReset.useMutation({
     onSuccess: async () => {

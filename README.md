@@ -66,7 +66,6 @@
 ├── .editorconfig               # editorconfig
 ├── .gitignore                  # gitignore
 ├── .nvmrc                      # nvm config
-├── .prettierrc                 # prettier config
 ├── biome.json                  # biome linter & formatter config
 ├── bun.lockb                   # bun lockfile
 ├── commitlint.config.ts        # commitlint config
