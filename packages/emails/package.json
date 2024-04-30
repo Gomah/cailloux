@@ -1,0 +1,15 @@
+{
+  "name": "@acme/emails",
+  "private": true,
+  "scripts": {
+    "dev": "email dev --dir ./templates -p 3002",
+    "export": "email export"
+  },
+  "exports": {
+    ".": "./index.ts"
+  },
+  "dependencies": {
+    "@react-email/components": "0.0.17",
+    "react-email": "2.1.2"
+  }
+}

@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                     String                  @id @default(cuid())
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  name                   String?
+  email                  String                  @unique
+  email_verified         Boolean                 @default(false)
+  hashedPassword         String?
+  accounts               Account[]
+  sessions               Session[]
+  emailVerificationCodes EmailVerificationCode[]
+  passwordResetTokens    PasswordResetToken[]
+}
+
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  code      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  token     String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  userId            String
+  provider          String
+  providerAccountId String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  ip        String?
+  userAgent String?
+  browser   String?
+  os        String?
+
+  @@index([userId])
+}

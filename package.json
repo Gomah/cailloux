@@ -1,0 +1,43 @@
+{
+  "name": "cailloux",
+  "private": true,
+  "prisma": {
+    "schema": "packages/db/prisma/schema.prisma",
+    "seed": "bunx packages/db/src/seed.ts"
+  },
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "dev:web": "turbo run dev --filter=@acme/web",
+    "dev:ui": "turbo run dev --filter=@acme/ui",
+    "db:generate": "turbo run db:generate",
+    "db:migrate:deploy": "turbo run db:migrate:deploy",
+    "db:migrate:dev": "turbo run db:migrate:dev",
+    "db:push": "turbo run db:push",
+    "db:seed": "turbo run db:seed",
+    "lint": "turbo run lint",
+    "format": "biome format --write",
+    "generate": "turbo gen",
+    "generate:component": "turbo gen react-component",
+    "generate:package": "turbo gen package",
+    "update-deps": "bunx npm-check-updates --root -ws --format group -i",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@acme/typescript-config": "workspace:*",
+    "@biomejs/biome": "1.7.1",
+    "@changesets/changelog-github": "0.5.0",
+    "@changesets/cli": "2.27.1",
+    "@commitlint/cli": "19.3.0",
+    "@commitlint/config-conventional": "19.2.2",
+    "@total-typescript/ts-reset": "0.5.1",
+    "@turbo/gen": "1.13.3",
+    "bun-types": "1.1.6",
+    "turbo": "1.13.3"
+  },
+  "packageManager": "bun@1.1.6",
+  "engines": {
+    "node": ">=20"
+  }
+}

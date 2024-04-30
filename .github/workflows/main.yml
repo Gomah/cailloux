@@ -1,0 +1,61 @@
+name: 🍿 Lint, Build & Test
+on: push
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  lint:
+    name: ▲ Biome
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: ▲ Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          version: latest
+
+      - name: ⚡️ Run Biome
+        run: biome ci .
+
+  build:
+    name: 📦 Build & Test
+    needs: lint
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+
+    # Turbo caching
+    env:
+      FORCE_COLOR: 3
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ARGON_SECRET: ${{ secrets.ARGON_SECRET }}
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🐰 Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+        # Cache doesn't seem to be necessary yet?
+        # https://github.com/oven-sh/setup-bun/issues/14
+
+      - name: 📥 Install dependencies
+        run: bun install
+
+      - name: 🧱 Build
+        run: bunx turbo run build
+
+      - name: 🧪 Tests
+        run: bun run test

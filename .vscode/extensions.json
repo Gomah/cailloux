@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "oven.bun-vscode",
+    "mikestead.dotenv",
+    "editorconfig.editorconfig",
+    "tombonnike.vscode-status-bar-format-toggle",
+    "wix.vscode-import-cost",
+    "oderwat.indent-rainbow",
+    "prisma.prisma",
+    "aaron-bond.better-comments",
+    "bradlc.vscode-tailwindcss",
+    "Orta.vscode-twoslash-queries"
+  ]
+}

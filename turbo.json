@@ -1,0 +1,38 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env"],
+  "globalEnv": ["GITHUB_TOKEN", "DATABASE_URL", "RESEND_API_KEY"],
+  "pipeline": {
+    "build": {
+      "dependsOn": ["^build", "^db:generate"],
+      "outputs": [".next/**", "dist/**", "build/**", "!.next/cache/**", ".vercel/**"]
+    },
+
+    "lint": {
+      "dependsOn": ["^lint"]
+    },
+
+    "db:generate": {
+      "cache": false
+    },
+
+    "db:push": {
+      "cache": false
+    },
+
+    "db:migrate:deploy": {
+      "cache": false
+    },
+
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+
+    "test": {},
+
+    "test:vis": {
+      "cache": false
+    }
+  }
+}

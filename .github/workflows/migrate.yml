@@ -1,0 +1,55 @@
+name: 🚀 Migrate
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    # * Only run this workflow when something in the datamodel changes or in this workflow file
+    paths:
+      - 'package.json'
+      - 'bun.lockb'
+      - 'packages/db/**'
+      - .github/workflows/migrate.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  migrate:
+    name: 🚀 Prisma Migrate
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+
+    env:
+      FORCE_COLOR: 3
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+      # Set the DATABASE_URL secret as an environment variable
+      # You should use unique secrets for each environment
+      # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+    steps:
+      - name: ⬇️ Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: 🐰 Setup Bun
+        uses: oven-sh/setup-bun@v1
+
+      - name: 📥 Install dependencies
+        run: bun install
+
+      - name: 📦 Build Prisma Client
+        run: bunx turbo run build --filter=@acme/db
+
+      - name: 🏗 Run migrations
+        working-directory: packages/db
+        run: bun run db:migrate:deploy
+
+      - name: 🌱 Upsert seed
+        working-directory: packages/db
+        run: bun run db:seed

@@ -1,0 +1,21 @@
+import type { Story, StoryDefault } from '@ladle/react';
+import { {{ pascalCase name }}, type {{ pascalCase name }}Props } from '../{{ kebabCase name}}';
+
+export default {
+  title: 'Components',
+} satisfies StoryDefault;
+
+
+export const Showcase: Story<{{ pascalCase name }}Props> = () => {
+  return (
+    <div>
+      <{{ pascalCase name }} />
+    </div>
+  );
+};
+
+Showcase.storyName = '{{ pascalCase name }}';
+
+Showcase.args = {};
+
+Showcase.argTypes = {};

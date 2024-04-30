@@ -1,0 +1,16 @@
+{
+  "name": "@acme/tailwind-config",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./tailwind.config.ts"
+  },
+  "dependencies": {
+    "tailwindcss-animate": "1.0.7"
+  },
+  "devDependencies": {
+    "@acme/typescript-config": "workspace:*",
+    "tailwindcss": "3.4.3",
+    "typescript": "5.4.5"
+  }
+}

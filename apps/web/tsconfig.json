@@ -1,0 +1,20 @@
+{
+  "extends": "@acme/typescript-config/base.json",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "module": "esnext",
+    "tsBuildInfoFile": "node_modules/.cache/tsbuildinfo.json",
+    "lib": ["es2022", "DOM", "DOM.Iterable", "WebWorker"]
+  },
+  "include": [".", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

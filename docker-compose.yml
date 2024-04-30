@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:15.1
+    container_name: cailloux_db
+    networks:
+      - app_network
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: cailloux
+      POSTGRES_DB: cailloux
+
+networks:
+  app_network:
