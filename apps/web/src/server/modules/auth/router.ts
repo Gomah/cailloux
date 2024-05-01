@@ -45,6 +45,10 @@ export const authRouter = createTRPCRouter({
 
       const validPassword = await verify(existingUser.hashedPassword as string, password, {
         secret: Buffer.from(env.ARGON_SECRET, 'hex'),
+        memoryCost: 19456,
+        timeCost: 2,
+        outputLen: 32,
+        parallelism: 1,
       });
 
       if (!validPassword) {
@@ -77,6 +81,10 @@ export const authRouter = createTRPCRouter({
 
     const hashedPassword = await hash(password, {
       secret: Buffer.from(env.ARGON_SECRET, 'hex'),
+      memoryCost: 19456,
+      timeCost: 2,
+      outputLen: 32,
+      parallelism: 1,
     });
 
     try {
@@ -363,6 +371,10 @@ export const authRouter = createTRPCRouter({
 
         const hashedPassword = await hash(password, {
           secret: Buffer.from(env.ARGON_SECRET, 'hex'),
+          memoryCost: 19456,
+          timeCost: 2,
+          outputLen: 32,
+          parallelism: 1,
         });
 
         // * Update the database with the hashed password
