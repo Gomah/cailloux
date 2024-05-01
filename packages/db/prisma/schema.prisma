@@ -13,7 +13,7 @@ model User {
   updatedAt              DateTime                @updatedAt
   name                   String?
   email                  String                  @unique
-  email_verified         Boolean                 @default(false)
+  emailVerified          Boolean                 @default(false)
   hashedPassword         String?
   accounts               Account[]
   sessions               Session[]

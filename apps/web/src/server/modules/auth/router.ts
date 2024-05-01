@@ -3,11 +3,13 @@ import { lucia } from '@/lib/auth';
 
 import { createSession } from '@/lib/auth/utils';
 import {
+  EMAIL_FROM,
   PASSWORD_RESET_EXPIRES_IN,
   VERIFICATION_CODE_EXPIRES_IN,
   VERIFICATION_CODE_RESEND_DELAY,
 } from '@/lib/constants';
 import { resend } from '@/lib/resend';
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '@/server/trpc';
 import { getBaseUrl } from '@/utils/getBaseUrl';
 import { sleep } from '@/utils/sleep';
 import * as EmailTemplates from '@acme/emails';
@@ -16,20 +18,13 @@ import { TRPCError } from '@trpc/server';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { cookies } from 'next/headers';
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '../../trpc';
 import { generateEmailVerificationCode, generatePasswordResetToken } from './shared';
-import {
-  loginSchema,
-  resetPasswordSchema,
-  signupSchema,
-  triggerPasswordResetSchema,
-  verifyEmailSchema,
-} from './validators';
+import * as AuthValidators from './validators';
 
 dayjs.extend(relativeTime);
 
 export const authRouter = createTRPCRouter({
-  login: publicProcedure.input(loginSchema).mutation(async ({ ctx, input }) => {
+  login: publicProcedure.input(AuthValidators.loginSchema).mutation(async ({ ctx, input }) => {
     const { email, password } = input;
 
     try {
@@ -77,7 +72,7 @@ export const authRouter = createTRPCRouter({
     return { success: true };
   }),
 
-  signup: publicProcedure.input(signupSchema).mutation(async ({ ctx, input }) => {
+  signup: publicProcedure.input(AuthValidators.signupSchema).mutation(async ({ ctx, input }) => {
     const { email, password } = input;
 
     const hashedPassword = await hash(password, {
@@ -110,7 +105,7 @@ export const authRouter = createTRPCRouter({
       const code = await generateEmailVerificationCode({ userId: user.id });
 
       await resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: EMAIL_FROM,
         to: [email],
         subject: 'Verify your email address',
         react: EmailTemplates.VerifyEmailWithCode({
@@ -137,87 +132,92 @@ export const authRouter = createTRPCRouter({
     return { success: true };
   }),
 
-  verifyEmail: protectedProcedure.input(verifyEmailSchema).mutation(async ({ ctx, input }) => {
-    const { code } = input;
-    const { user } = ctx.session;
+  verifyEmail: protectedProcedure
+    .input(AuthValidators.verifyEmailSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { code } = input;
+      const { user } = ctx.session;
 
-    if (!user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'Invalid session',
-      });
-    }
+      if (!user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'Invalid session',
+        });
+      }
 
-    try {
-      const dbCode = await ctx.prisma.$transaction(async (tx) => {
-        // * Get the verification code
-        const item = await tx.emailVerificationCode.findFirst({
-          where: {
-            userId: user.id,
-          },
-          select: {
-            id: true,
-            createdAt: true,
-            code: true,
-            user: {
-              select: {
-                email: true,
+      try {
+        const dbCode = await ctx.prisma.$transaction(async (tx) => {
+          // * Get the verification code
+          const item = await tx.emailVerificationCode.findFirst({
+            where: {
+              userId: user.id,
+            },
+            select: {
+              id: true,
+              createdAt: true,
+              code: true,
+              user: {
+                select: {
+                  email: true,
+                },
               },
             },
-          },
+          });
+
+          if (item) {
+            await tx.emailVerificationCode.delete({
+              select: { id: true },
+              where: { id: item.id },
+            });
+          }
+
+          return item;
         });
 
-        if (item) {
-          await tx.emailVerificationCode.delete({ where: { id: item.id } });
+        if (!dbCode || dbCode.code !== code) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Invalid verification code',
+          });
         }
 
-        return item;
-      });
+        if (dayjs().isAfter(dayjs(dbCode.createdAt).add(VERIFICATION_CODE_EXPIRES_IN, 'minute'))) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Verification code expired',
+          });
+        }
 
-      if (!dbCode || dbCode.code !== code) {
+        if (dbCode.user.email !== user.email) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Email does not match',
+          });
+        }
+
+        await Promise.all([
+          await lucia.invalidateUserSessions(user.id),
+          await ctx.prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: true },
+            select: { id: true },
+          }),
+        ]);
+
+        const session = await createSession(user.id);
+        const sessionCookie = lucia.createSessionCookie(session.id);
+        cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Invalid verification code',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An error occurred while verifying the code. Please try again.',
         });
       }
-
-      if (dayjs().isAfter(dayjs(dbCode.createdAt).add(VERIFICATION_CODE_EXPIRES_IN, 'minute'))) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Verification code expired',
-        });
-      }
-
-      if (dbCode.user.email !== user.email) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Email does not match',
-        });
-      }
-
-      await Promise.all([
-        await lucia.invalidateUserSessions(user.id),
-        await ctx.prisma.user.update({
-          where: { id: user.id },
-          data: { email_verified: true },
-          select: { id: true },
-        }),
-      ]);
-
-      const session = await createSession(user.id);
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-    } catch (error) {
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred while logging in. Please try again.',
-      });
-    }
-  }),
+    }),
 
   resendVerificationEmail: protectedProcedure.mutation(async ({ ctx }) => {
     const { user } = ctx.session;
@@ -247,7 +247,7 @@ export const authRouter = createTRPCRouter({
       const code = await generateEmailVerificationCode({ userId: user.id });
 
       await resend.emails.send({
-        from: 'Acme <onboarding@resend.dev>',
+        from: EMAIL_FROM,
         to: user.email,
         subject: 'Verify your email address',
         react: EmailTemplates.VerifyEmailWithCode({
@@ -267,7 +267,7 @@ export const authRouter = createTRPCRouter({
 
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred while logging in. Please try again.',
+        message: 'An error occurred while resending the verification code. Please try again.',
       });
     }
 
@@ -275,7 +275,7 @@ export const authRouter = createTRPCRouter({
   }),
 
   triggerPasswordReset: publicProcedure
-    .input(triggerPasswordResetSchema)
+    .input(AuthValidators.triggerPasswordResetSchema)
     .mutation(async ({ ctx, input }) => {
       const { email } = input;
 
@@ -298,7 +298,7 @@ export const authRouter = createTRPCRouter({
 
         // Send the reset password email
         await resend.emails.send({
-          from: 'Acme <onboarding@resend.dev>',
+          from: EMAIL_FROM,
           to: [email],
           subject: 'Reset your password',
           react: EmailTemplates.ResetPassword({
@@ -315,79 +315,81 @@ export const authRouter = createTRPCRouter({
 
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to send verification email. Please try again.',
+          message: 'An error occurred while triggering the password reset. Please try again.',
         });
       }
     }),
 
-  resetPassword: publicProcedure.input(resetPasswordSchema).mutation(async ({ ctx, input }) => {
-    try {
-      const { token, password } = input;
+  resetPassword: publicProcedure
+    .input(AuthValidators.resetPasswordSchema)
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const { token, password } = input;
 
-      const dbToken = await ctx.prisma.$transaction(async (tx) => {
-        // Get the token in the database
-        const item = await tx.passwordResetToken.findFirst({
-          where: { token },
-          select: {
-            id: true,
-            createdAt: true,
-            userId: true,
-          },
+        const dbToken = await ctx.prisma.$transaction(async (tx) => {
+          // Get the token in the database
+          const item = await tx.passwordResetToken.findFirst({
+            where: { token },
+            select: {
+              id: true,
+              createdAt: true,
+              userId: true,
+            },
+          });
+
+          // Delete the token
+          if (item) {
+            await tx.passwordResetToken.delete({ where: { id: item.id } });
+          }
+
+          return item;
         });
 
-        // Delete the token
-        if (item) {
-          await tx.passwordResetToken.delete({ where: { id: item.id } });
+        if (!dbToken) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Invalid password reset link',
+          });
         }
 
-        return item;
-      });
+        if (dayjs().isAfter(dayjs(dbToken.createdAt).add(PASSWORD_RESET_EXPIRES_IN, 'minute'))) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'Password reset link expired.',
+          });
+        }
 
-      if (!dbToken) {
+        await lucia.invalidateUserSessions(dbToken.userId);
+
+        const hashedPassword = await hash(password, {
+          secret: Buffer.from(env.ARGON_SECRET, 'hex'),
+        });
+
+        // * Update the database with the hashed password
+        await ctx.prisma.user.update({
+          where: { id: dbToken.userId },
+          data: {
+            emailVerified: true,
+            hashedPassword,
+          },
+
+          select: { id: true },
+        });
+
+        const session = await createSession(dbToken.userId);
+        const sessionCookie = lucia.createSessionCookie(session.id);
+        cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Invalid password reset link',
+          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An error occurred while resetting your password. Please try again.',
         });
       }
-
-      if (dayjs().isAfter(dayjs(dbToken.createdAt).add(PASSWORD_RESET_EXPIRES_IN, 'minute'))) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'Password reset link expired.',
-        });
-      }
-
-      await lucia.invalidateUserSessions(dbToken.userId);
-
-      const hashedPassword = await hash(password, {
-        secret: Buffer.from(env.ARGON_SECRET, 'hex'),
-      });
-
-      // * Update the database with the hashed password
-      await ctx.prisma.user.update({
-        where: { id: dbToken.userId },
-        data: {
-          email_verified: true,
-          hashedPassword,
-        },
-
-        select: { id: true },
-      });
-
-      const session = await createSession(dbToken.userId);
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
-    } catch (error) {
-      if (error instanceof TRPCError) {
-        throw error;
-      }
-
-      throw new TRPCError({
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred while logging in. Please try again.',
-      });
-    }
-  }),
+    }),
 
   logout: protectedProcedure.mutation(async ({ ctx }) => {
     const { session } = ctx.session;
