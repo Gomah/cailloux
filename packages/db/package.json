@@ -21,7 +21,7 @@
   "devDependencies": {
     "@acme/typescript-config": "workspace:*",
     "prisma": "5.13.0",
-    "tsx": "4.8.2",
+    "tsx": "4.9.0",
     "typescript": "5.4.5"
   }
 }
