@@ -31,7 +31,6 @@ export const createTRPCContext = async (opts: {
   headers: Headers;
   session?: ValidateRequestResponse | null;
 }) => {
-  // TODO: Do we need to use the uncachedValidateRequest?
   const session = opts.session ?? (await validateRequest());
   const correlationId = nanoid();
 

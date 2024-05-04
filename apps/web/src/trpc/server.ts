@@ -15,7 +15,6 @@ const createContext = cache(async () => {
   heads.set('x-trpc-source', 'rsc');
 
   return createTRPCContext({
-    // TODO: Do we need to use the uncachedValidateRequest?
     session: await validateRequest(),
     headers: heads,
   });

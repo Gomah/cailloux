@@ -3,8 +3,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const headers = new Headers(request.headers);
+  headers.set('x-current-path', request.nextUrl.pathname);
+
   if (request.method === 'GET') {
-    return NextResponse.next();
+    return NextResponse.next({ headers });
   }
 
   // * CSRF – Check if the request origin is allowed
@@ -17,7 +20,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     });
   }
 
-  return NextResponse.next();
+  return NextResponse.next({ headers });
 }
 
 export const config = {

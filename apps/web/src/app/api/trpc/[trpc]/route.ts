@@ -26,7 +26,6 @@ export const OPTIONS = () => {
 };
 
 const handler = async (req: Request) => {
-  // TODO: Do we need to use the uncachedValidateRequest?
   const session = await validateRequest();
   const response = await fetchRequestHandler({
     endpoint: '/api/trpc',
