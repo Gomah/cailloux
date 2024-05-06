@@ -5,7 +5,7 @@
     "schema": "packages/db/prisma/schema.prisma",
     "seed": "bunx packages/db/src/seed.ts"
   },
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": ["apps/*", "packages/*", "tooling/*"],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
