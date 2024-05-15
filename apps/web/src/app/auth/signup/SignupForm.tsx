@@ -1,6 +1,6 @@
 'use client';
 
-import Link from '@/app/_components/Link';
+import { Link } from '@/app/_components/Link';
 import { useProgressBar } from '@/hooks/useProgressBar';
 import { useZodForm } from '@/hooks/useZodForm';
 import { signupSchema } from '@/server/modules/auth/validators';

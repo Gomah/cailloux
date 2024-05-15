@@ -1,6 +1,6 @@
 'use client';
 
-import Link from '@/app/_components/Link';
+import { Link } from '@/app/_components/Link';
 import { useZodForm } from '@/hooks/useZodForm';
 import { triggerPasswordResetSchema } from '@/server/modules/auth/validators';
 import { api } from '@/trpc/react';

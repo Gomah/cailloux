@@ -3,28 +3,29 @@
 import { useProgressBar } from '@/hooks/useProgressBar';
 import NextLink from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type ComponentProps, startTransition } from 'react';
+import { type ComponentProps, forwardRef, startTransition } from 'react';
 
-export default function Link({ href, children, ...rest }: ComponentProps<typeof NextLink>) {
-  const progress = useProgressBar();
-  const router = useRouter();
+export const Link = forwardRef<React.ElementRef<typeof NextLink>, ComponentProps<typeof NextLink>>(
+  ({ ...props }, ref) => {
+    const progress = useProgressBar();
+    const router = useRouter();
 
-  return (
-    <NextLink
-      href={href}
-      onClick={(e) => {
-        e.preventDefault();
-        progress.start();
+    return (
+      <NextLink
+        ref={ref}
+        {...props}
+        onClick={(e) => {
+          props?.onClick?.(e);
+          e.preventDefault();
+          progress.start();
 
-        startTransition(() => {
-          // @ts-expect-error
-          router.push(href.toString());
-          progress.done();
-        });
-      }}
-      {...rest}
-    >
-      {children}
-    </NextLink>
-  );
-}
+          startTransition(() => {
+            // @ts-expect-error
+            router.push(props.href.toString());
+            progress.done();
+          });
+        }}
+      />
+    );
+  }
+);
