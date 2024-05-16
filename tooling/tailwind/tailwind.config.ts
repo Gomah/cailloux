@@ -1,5 +1,4 @@
 import type { Config } from 'tailwindcss';
-const { fontFamily } = require('tailwindcss/defaultTheme');
 
 // We want each package to be responsible for its own content.
 const config: Omit<Config, 'content'> = {

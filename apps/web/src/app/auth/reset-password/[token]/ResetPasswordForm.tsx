@@ -16,7 +16,6 @@ import {
 } from '@acme/ui';
 import { useRouter } from 'next/navigation';
 import { startTransition } from 'react';
-import { Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 
 export function ResetPasswordForm({ token }: { token: string }) {

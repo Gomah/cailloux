@@ -10,7 +10,7 @@ async function handleLogout() {
 }
 
 export default async function HomePage() {
-  const { session, user } = await getUserSession();
+  const { user } = await getUserSession();
 
   return (
     <main className="flex min-h-dvh flex-col items-center justify-center">

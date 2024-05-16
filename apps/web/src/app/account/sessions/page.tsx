@@ -9,7 +9,7 @@ export const metadata = {
 };
 
 export default async function HomePage() {
-  const { session: currentSession, user } = await getUserSession();
+  const { session: currentSession } = await getUserSession();
 
   const sessions = await api.account.sessions();
 

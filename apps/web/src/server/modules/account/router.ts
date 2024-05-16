@@ -36,6 +36,11 @@ export const accountRouter = createTRPCRouter({
       data: {
         name: input.name,
       },
+      select: {
+        name: true,
+      },
     });
+
+    return updatedProfile;
   }),
 });

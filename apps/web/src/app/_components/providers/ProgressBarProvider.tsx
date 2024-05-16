@@ -2,7 +2,7 @@
 
 import { ProgressBarContext } from '@/hooks/useProgressBar';
 import { AnimatePresence, motion, useMotionTemplate, useSpring } from 'framer-motion';
-import { type ReactNode, createContext, useContext, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 export function ProgressBar({ className, children }: { className: string; children: ReactNode }) {
   const progress = useProgress();

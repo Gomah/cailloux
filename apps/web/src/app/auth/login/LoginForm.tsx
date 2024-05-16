@@ -9,7 +9,6 @@ import {
   Button,
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -18,7 +17,6 @@ import {
 } from '@acme/ui';
 import { useRouter } from 'next/navigation';
 import { startTransition } from 'react';
-import { Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 
 export function LoginForm() {

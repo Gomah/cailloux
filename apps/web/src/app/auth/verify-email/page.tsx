@@ -8,7 +8,7 @@ export const metadata = {
 };
 
 export default async function VerifyEmailPage() {
-  const { user, session } = await validateRequest();
+  const { user } = await validateRequest();
 
   if (!user) redirect('/auth/login');
   if (user.emailVerified) redirect('/');

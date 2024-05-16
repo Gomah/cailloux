@@ -3,7 +3,7 @@ import Inspect from 'inspx';
 import * as React from 'react';
 import './styles.css';
 
-export const Provider: GlobalProvider = ({ children, globalState, storyMeta }) => {
+export const Provider: GlobalProvider = ({ children, globalState }) => {
   // Hook to update the html class to reflect the current theme
   React.useEffect(() => {
     if (globalState.theme === 'light') {

@@ -21,7 +21,7 @@ export const createSession = (
     sessionId?: string;
   }
 ) => {
-  const { browser, ua, device, engine, os } = userAgent({
+  const { browser, ua, os } = userAgent({
     headers: headers(),
   });
 

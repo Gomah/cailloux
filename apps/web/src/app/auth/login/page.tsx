@@ -1,7 +1,5 @@
-import { env } from '@/env';
 import { validateRequest } from '@/lib/auth/validateRequest';
 import type { Metadata } from 'next';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { LoginForm } from './LoginForm';
 
