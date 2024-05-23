@@ -33,10 +33,10 @@
     "@commitlint/config-conventional": "19.2.2",
     "@total-typescript/ts-reset": "0.5.1",
     "@turbo/gen": "1.13.3",
-    "bun-types": "1.1.8",
+    "bun-types": "1.1.9",
     "turbo": "1.13.3"
   },
-  "packageManager": "bun@1.1.8",
+  "packageManager": "bun@1.1.9",
   "engines": {
     "node": ">=20"
   }
