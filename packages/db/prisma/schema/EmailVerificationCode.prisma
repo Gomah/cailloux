@@ -1,0 +1,7 @@
+model EmailVerificationCode {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  code      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+}

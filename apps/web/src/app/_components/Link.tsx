@@ -15,6 +15,7 @@ export const Link = forwardRef<React.ElementRef<typeof NextLink>, ComponentProps
         ref={ref}
         {...props}
         onClick={(e) => {
+          if (e.button !== 0 || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
           props?.onClick?.(e);
           e.preventDefault();
           progress.start();

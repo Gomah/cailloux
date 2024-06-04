@@ -23,6 +23,7 @@ type DashboardProps = {
 
 export function Dashboard({ user }: DashboardProps) {
   const router = useRouter();
+
   const updateProfile = api.account.updateProfile.useMutation({
     onSuccess: async () => {
       toast.success('Success', {

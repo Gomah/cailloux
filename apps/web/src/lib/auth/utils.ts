@@ -1,5 +1,5 @@
 import type { RegisteredDatabaseSessionAttributes, UserId } from 'lucia';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { userAgent } from 'next/server';
 import { lucia } from '.';
@@ -14,7 +14,7 @@ export const getUserSession = async () => {
   return { user, session };
 };
 
-export const createSession = (
+export const createSessionWithCookies = async (
   userId: UserId,
   attributes?: RegisteredDatabaseSessionAttributes,
   options?: {
@@ -25,7 +25,7 @@ export const createSession = (
     headers: headers(),
   });
 
-  return lucia.createSession(
+  const session = await lucia.createSession(
     userId,
     {
       ip: headers().get('x-forwarded-for'),
@@ -37,4 +37,6 @@ export const createSession = (
     },
     options
   );
+  const sessionCookie = lucia.createSessionCookie(session.id);
+  cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 };

@@ -1,3 +1,4 @@
+import './globals.css';
 import { env } from '@/env';
 import { TRPCReactProvider } from '@/trpc/react';
 import { Toaster } from '@acme/ui/sonner';
@@ -5,7 +6,6 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { ProgressBar } from './_components/providers/ProgressBarProvider';
 import { ThemeProvider } from './_components/providers/ThemeProvider';
-import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Acme',

@@ -1,0 +1,14 @@
+model Session {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  ip        String?
+  userAgent String?
+  browser   String?
+  os        String?
+
+  @@index([userId])
+}

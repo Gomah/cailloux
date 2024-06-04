@@ -1,7 +1,7 @@
 import { env } from '@/env';
 import { lucia } from '@/lib/auth';
 
-import { createSession } from '@/lib/auth/utils';
+import { createSessionWithCookies } from '@/lib/auth/utils';
 import {
   EMAIL_FROM,
   PASSWORD_RESET_EXPIRES_IN,
@@ -36,6 +36,7 @@ export const authRouter = createTRPCRouter({
         },
       });
 
+      // * Return an error if the user is not found
       if (!existingUser) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -43,6 +44,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
+      // * Check if the password is valid
       const validPassword = await verify(existingUser.hashedPassword as string, password, {
         secret: Buffer.from(env.ARGON_SECRET, 'hex'),
         memoryCost: 19456,
@@ -51,6 +53,7 @@ export const authRouter = createTRPCRouter({
         parallelism: 1,
       });
 
+      // * Return an error if the password is invalid, without leaking information
       if (!validPassword) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
@@ -58,10 +61,8 @@ export const authRouter = createTRPCRouter({
         });
       }
 
-      const session = await createSession(existingUser.id);
-      const sessionCookie = lucia.createSessionCookie(session.id);
-
-      cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+      // * Create a new session with cookies
+      await createSessionWithCookies(existingUser.id);
     } catch (error) {
       if (error instanceof TRPCError) {
         throw error;
@@ -79,17 +80,12 @@ export const authRouter = createTRPCRouter({
   signup: publicProcedure.input(AuthValidators.signupSchema).mutation(async ({ ctx, input }) => {
     const { email, password } = input;
 
-    const hashedPassword = await hash(password, {
-      secret: Buffer.from(env.ARGON_SECRET, 'hex'),
-      memoryCost: 19456,
-      timeCost: 2,
-      outputLen: 32,
-      parallelism: 1,
-    });
-
     try {
       const existingUser = await ctx.prisma.user.findFirst({
         where: { email: email.toLowerCase().trim() },
+        select: {
+          id: true,
+        },
       });
 
       if (existingUser) {
@@ -98,6 +94,15 @@ export const authRouter = createTRPCRouter({
           message: 'Cannot create account with that email',
         });
       }
+
+      // * Generate a hashed password
+      const hashedPassword = await hash(password, {
+        secret: Buffer.from(env.ARGON_SECRET, 'hex'),
+        memoryCost: 19456,
+        timeCost: 2,
+        outputLen: 32,
+        parallelism: 1,
+      });
 
       const user = await ctx.prisma.user.create({
         data: {
@@ -110,6 +115,7 @@ export const authRouter = createTRPCRouter({
       });
 
       // * Generate the code
+      // TODO: Move this to a background job with after/waitUntil
       const code = await generateEmailVerificationCode({ userId: user.id });
 
       await resend.emails.send({
@@ -122,10 +128,7 @@ export const authRouter = createTRPCRouter({
         }),
       });
 
-      const session = await createSession(user.id);
-
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+      await createSessionWithCookies(user.id);
     } catch (error) {
       if (error instanceof TRPCError) {
         throw error;
@@ -212,9 +215,7 @@ export const authRouter = createTRPCRouter({
           }),
         ]);
 
-        const session = await createSession(user.id);
-        const sessionCookie = lucia.createSessionCookie(session.id);
-        cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+        await createSessionWithCookies(user.id);
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;
@@ -252,6 +253,7 @@ export const authRouter = createTRPCRouter({
         });
       }
 
+      // TODO: Move this to a background job with after/waitUntil
       const code = await generateEmailVerificationCode({ userId: user.id });
 
       await resend.emails.send({
@@ -264,10 +266,7 @@ export const authRouter = createTRPCRouter({
         }),
       });
 
-      const session = await createSession(user.id);
-
-      const sessionCookie = lucia.createSessionCookie(session.id);
-      cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+      await createSessionWithCookies(user.id);
     } catch (error) {
       if (error instanceof TRPCError) {
         throw error;
@@ -353,6 +352,7 @@ export const authRouter = createTRPCRouter({
           return item;
         });
 
+        // * Return an error if the token is not found
         if (!dbToken) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
@@ -360,6 +360,7 @@ export const authRouter = createTRPCRouter({
           });
         }
 
+        // * Check if the token has expired
         if (dayjs().isAfter(dayjs(dbToken.createdAt).add(PASSWORD_RESET_EXPIRES_IN, 'minute'))) {
           throw new TRPCError({
             code: 'UNAUTHORIZED',
@@ -367,8 +368,10 @@ export const authRouter = createTRPCRouter({
           });
         }
 
+        // * Invalidate all user sessions
         await lucia.invalidateUserSessions(dbToken.userId);
 
+        // * Generate a new hashed password
         const hashedPassword = await hash(password, {
           secret: Buffer.from(env.ARGON_SECRET, 'hex'),
           memoryCost: 19456,
@@ -388,9 +391,8 @@ export const authRouter = createTRPCRouter({
           select: { id: true },
         });
 
-        const session = await createSession(dbToken.userId);
-        const sessionCookie = lucia.createSessionCookie(session.id);
-        cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
+        // * Create session with cookies
+        await createSessionWithCookies(dbToken.userId);
       } catch (error) {
         if (error instanceof TRPCError) {
           throw error;
@@ -406,8 +408,10 @@ export const authRouter = createTRPCRouter({
   logout: protectedProcedure.mutation(async ({ ctx }) => {
     const { session } = ctx.session;
 
+    // * Invalidate existing session
     await lucia.invalidateSession(session.id);
 
+    // * Create & set a new blank session cookie
     const sessionCookie = lucia.createBlankSessionCookie();
     cookies().set(sessionCookie.name, sessionCookie.value, sessionCookie.attributes);
 

@@ -17,7 +17,7 @@ const nextConfig = {
 
   experimental: {
     serverSourceMaps: false,
-    serverComponentsExternalPackages: ['oslo'],
+    serverComponentsExternalPackages: ['oslo', 'pino', 'pino-pretty'],
     typedRoutes: true,
   },
 

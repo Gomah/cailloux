@@ -1,0 +1,13 @@
+model User {
+  id                     String                  @id @default(cuid())
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  name                   String?
+  email                  String                  @unique
+  emailVerified          Boolean                 @default(false)
+  hashedPassword         String?
+  accounts               Account[]
+  sessions               Session[]
+  emailVerificationCodes EmailVerificationCode[]
+  passwordResetTokens    PasswordResetToken[]
+}
