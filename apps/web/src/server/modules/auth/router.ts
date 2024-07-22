@@ -106,7 +106,7 @@ export const authRouter = createTRPCRouter({
 
       const user = await ctx.prisma.user.create({
         data: {
-          email,
+          email: email.toLowerCase().trim(),
           hashedPassword,
         },
         select: {

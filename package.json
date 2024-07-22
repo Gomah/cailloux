@@ -2,8 +2,8 @@
   "name": "cailloux",
   "private": true,
   "prisma": {
-    "schema": "packages/db/prisma/schema.prisma",
-    "seed": "bunx packages/db/src/seed.ts"
+    "schema": "packages/db/prisma/_core.prisma",
+    "seed": "bunx tsx packages/db/src/seed.ts"
   },
   "workspaces": ["apps/*", "packages/*", "tooling/*"],
   "scripts": {
@@ -26,17 +26,17 @@
   },
   "devDependencies": {
     "@acme/typescript-config": "workspace:*",
-    "@biomejs/biome": "1.8.0",
+    "@biomejs/biome": "1.8.3",
     "@changesets/changelog-github": "0.5.0",
-    "@changesets/cli": "2.27.5",
+    "@changesets/cli": "2.27.7",
     "@commitlint/cli": "19.3.0",
     "@commitlint/config-conventional": "19.2.2",
     "@total-typescript/ts-reset": "0.5.1",
-    "@turbo/gen": "2.0.1",
-    "bun-types": "1.1.12",
-    "turbo": "2.0.1"
+    "@turbo/gen": "2.0.9",
+    "bun-types": "1.1.20",
+    "turbo": "2.0.9"
   },
-  "packageManager": "bun@1.1.10",
+  "packageManager": "bun@1.1.20",
   "engines": {
     "node": ">=20"
   }

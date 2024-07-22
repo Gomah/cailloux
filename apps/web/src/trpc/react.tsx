@@ -70,6 +70,9 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           },
 
           true: unstable_httpBatchStreamLink(opts),
+
+          // We use `httpBatchLink` for the `auth` module as we need to set cookies.
+          // `unstable_httpBatchStreamLink` does not support setting headers once the stream has begun.
           false: httpBatchLink(opts),
         }),
       ],
